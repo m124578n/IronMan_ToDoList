@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo App</title>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.css">
+    
+    <script src="https://code.jquery.com/jquery-3.7.0.js" integrity="sha256-JlqSTELeR4TLqP0OG9dxM7yDPqX1ox/HfgiSLBj8+kM=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/semantic-ui@2.4.2/dist/semantic.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+
+<body onload="get_all_list()">
+    <div style="margin-top: 50px;" class="ui container">
+        <h1 class="ui center aligned header">To Do App</h1>
+
+        <form class="ui form">
+            <div class="field">
+                <label>Todo Title</label>
+                <input class="input-todo" name="title" id="title" placeholder="Enter Todo..." value=""><br>
+            </div>
+            <button class="ui blue button btn-add" type="button" >Add</button>
+        </form>
+
+        <hr>
+        <div class="todos">
+        </div>
+
+        <script>
+            let state = {
+                todos: []
+            }
+
+            function get_all_list(){
+                axios.get("/api/")
+                    .then(response => {
+                        response.data.data.forEach(todo => {
+                            state = {
+                                todos: [...state.todos, {
+                                    id: todo.id,
+                                    content: todo.title,
+                                    isDone: todo.complete
+                                }]
+                            }
+                        });
+                        updateState(state)
+                    })
+                }
+
+            // 更新 state
+            function updateState(newState) {
+                state = newState;
+                render()
+            }
+            
+            // state => UI
+            function render() {
+                // 先把畫面清空
+                $('.todos').empty();
+                console.log(state.todos)
+                $('.todos').append(
+                // 把每個 todo 的 HTML 集合起來放到畫面上
+                state.todos.map(todo => Todo(todo)).join('')
+                );
+            }
+            
+            // Todo component
+            function Todo({id, content, isDone}) {
+                return `
+                <div class="ui segment todo" data-id="${id}">
+                    <p class="ui big header"> ${id} | ${content} </p>
+
+                    ${Span({
+                        className: isDone ? 'ui green label' : 'ui gray label',
+                        content: isDone ? 'Complete' : 'Not Completed'
+                    })}
+
+                    ${Button({
+                        className: 'blue btn-update',
+                        content: 'Update'
+                    })}
+
+                    ${Button({
+                        className: 'red btn-delete',
+                        content: 'Delete'
+                    })}
+
+                </div>
+                `
+            }
+
+            function Span(props){
+                return `<span class="${props.className}">${props.content}</span>`
+            }
+            
+            // Button component
+            function Button(props) {
+                return `
+                <a class="ui ${props.className} button">${props.content}</a>
+                `
+            }
+            
+            // 新增 todo
+            $('.btn-add').click(() => {
+                const content = $('.input-todo').val();
+                if (!content) return;
+                $('.input-todo').val('');
+                axios.post("/api/add/", 
+                    {
+                        "title": content
+                    },
+                    {
+                        headers: { 
+                        "X-CSRFToken": "{{csrf_token}}",
+                        },
+                    }
+                )
+                .then(response => {
+                    todo_id = response.data["todo_id"]
+                    title = response.data["todo_title"]
+                    complete = response.data["complete"]
+                    // 更新 state
+                    updateState({
+                        todos: [...state.todos, {
+                            id: todo_id,
+                            content: title,
+                            isDone: complete
+                        }]
+                    });
+                })
+            });
+            
+            // 刪除 todo
+            $('.todos').on('click', '.btn-delete', e => {
+                const id = Number($(e.target).parents('.todo').attr('data-id'));
+                axios.get("/api/delete/"+id)
+                .then(response => {
+                    d_id = response.data["todo_id"]
+                    updateState({
+                        todos: state.todos = state.todos.filter(todo => todo.id !== d_id)
+                    });
+                })
+            });
+            
+            // 未完成 -> 已完成
+            $('.todos').on('click', '.btn-update', e => {
+                const id = Number($(e.target).parents('.todo').attr('data-id'));
+                axios.get("/api/update/"+id)
+                .then(response => {
+                    u_id = response.data["todo_id"]
+                    complete = response.data["complete"]
+                    updateState({
+                        todos: state.todos.map(todo => {
+                            if (todo.id !== u_id) return todo;
+                            return {
+                            ...todo,
+                            isDone: complete
+                            }
+                        })
+                    })
+                });
+            }); 
+        </script>
+    </div>
+</body>
+
+</html>
