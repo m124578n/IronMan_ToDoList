@@ -1,6 +1,7 @@
 from django.test import TestCase, Client
 from .models import Todo
 import json
+from django.shortcuts import get_object_or_404
 
 # Create your tests here.
 
@@ -52,3 +53,17 @@ class ToDoListTestCase(TestCase):
         self.assertEqual(res_data['complete'], False)
     
     
+    def test_update_todo(self):
+        res = self.client.get(f"/api/update/{data[0]['id']}")
+        res_data = json.loads(res.content)
+        self.assertEqual(res_data['todo_id'], data[0]['id'])
+        self.assertEqual(res_data['complete'], True)
+
+
+    def test_delete_todo(self):
+        res = self.client.get(f"/api/delete/{data[0]['id']}")
+        res_data = json.loads(res.content)
+        self.assertEqual(res_data['todo_id'], data[0]['id'])
+        todo = Todo.objects.filter(id=data[0]['id'])
+        self.assertEqual(list(todo), [])
+        
