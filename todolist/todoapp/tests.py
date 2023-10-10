@@ -7,14 +7,14 @@ from django.shortcuts import get_object_or_404
 
 data = [
     {
-    'id': 1,
-    'title': 'test 001',
-    'complete': False
+        'id': 1,
+        'title': 'test 001',
+        'complete': False
     },
     {
-    'id': 2,
-    'title': 'test 002',
-    'complete': True
+        'id': 2,
+        'title': 'test 002',
+        'complete': True
     },
 ]
 
@@ -66,4 +66,3 @@ class ToDoListTestCase(TestCase):
         self.assertEqual(res_data['todo_id'], data[0]['id'])
         todo = Todo.objects.filter(id=data[0]['id'])
         self.assertEqual(list(todo), [])
-        
