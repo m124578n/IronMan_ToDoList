@@ -5,6 +5,7 @@ from django.forms.models import model_to_dict
 from .models import Todo
 import json
 
+
 # Create your views here.
 
 def index(request):
